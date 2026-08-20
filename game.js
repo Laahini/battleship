@@ -88,7 +88,7 @@ function shipCells(row, col, size, orient) {
 
 function canPlace(grid, row, col, size, orient) {
   const cells = shipCells(row, col, size, orient);
-  return cells.every(([r, c]) => inBounds(r, c) && !grid[r][c].shipId);
+  return cells.every(([r, c]) => inBounds(r, c) && grid[r][c].shipId === null);
 }
 
 function placeShip(grid, ships, row, col, size, orient, name) {
