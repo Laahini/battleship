@@ -1,0 +1,13 @@
+{
+  "name": "battleship-leaderboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Battleship vs AI with a DynamoDB-backed global leaderboard, deployed on Vercel",
+  "scripts": {
+    "create-table": "node scripts/create-table.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.658.1",
+    "@aws-sdk/lib-dynamodb": "^3.658.1"
+  }
+}

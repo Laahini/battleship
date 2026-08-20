@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Battleship</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="nav-inner">
+      <div class="logo">🎯 BATTLESHIP</div>
+      <nav class="nav-links">
+        <button class="nav-link active" data-nav="play">Play</button>
+        <button class="nav-link" data-nav="leaderboard">Leaderboard</button>
+      </nav>
+      <div class="player-name-wrap">
+        <label for="playerNameInput">Captain</label>
+        <input id="playerNameInput" type="text" maxlength="16" placeholder="Your name">
+      </div>
+    </div>
+  </header>
+
+  <div class="status-line" id="statusLine">Place your ships to begin</div>
+
+  <!-- ============== PLAY VIEW ============== -->
+  <main id="playView" class="view">
+
+    <!-- PLACEMENT SCREEN -->
+    <section id="placementScreen" class="screen">
+      <div class="placement-panel">
+        <div class="board-wrap">
+          <h2>Your Fleet</h2>
+          <div id="placementBoard" class="board" data-size="10"></div>
+        </div>
+
+        <div class="controls-panel">
+          <h3>Ships to Place</h3>
+          <ul id="shipList" class="ship-list"></ul>
+
+          <div class="button-row">
+            <button id="rotateBtn" class="btn">⟳ Rotate (R)</button>
+            <button id="randomBtn" class="btn accent-blue">🎲 Randomize</button>
+            <button id="resetBtn" class="btn ghost">↺ Reset</button>
+          </div>
+
+          <button id="startBattleBtn" class="btn primary" disabled>Start Battle</button>
+          <p class="hint">Click a cell to place the highlighted ship. Press R or right-click to rotate.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- BATTLE SCREEN -->
+    <section id="battleScreen" class="screen hidden">
+      <div class="battle-panel">
+        <div class="board-wrap">
+          <h2>Your Fleet</h2>
+          <div id="playerBoard" class="board" data-size="10"></div>
+          <div id="playerFleetStatus" class="fleet-status"></div>
+        </div>
+
+        <div class="board-wrap">
+          <h2>Enemy Waters</h2>
+          <div id="enemyBoard" class="board" data-size="10"></div>
+          <div id="enemyFleetStatus" class="fleet-status"></div>
+        </div>
+      </div>
+
+      <div class="log-panel">
+        <h3>Battle Log</h3>
+        <div id="logList" class="log-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============== LEADERBOARD VIEW ============== -->
+  <main id="leaderboardView" class="view hidden">
+    <section class="screen">
+      <h1 class="page-title">Leaderboard</h1>
+
+      <h3 class="section-heading">Best Wins <span class="muted">— ranked by fewest shots</span></h3>
+      <div class="table-card">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Captain</th>
+              <th>Shots</th>
+              <th>Accuracy</th>
+              <th>Time</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="bestWinsBody"></tbody>
+        </table>
+        <p id="bestWinsEmpty" class="empty-note hidden">No wins yet — sink a fleet to set a record!</p>
+      </div>
+
+      <h3 class="section-heading">Recent Games</h3>
+      <div class="table-card">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th>Captain</th>
+              <th>Result</th>
+              <th>Shots</th>
+              <th>Accuracy</th>
+              <th>Time</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="recentGamesBody"></tbody>
+        </table>
+        <p id="recentGamesEmpty" class="empty-note hidden">No games played yet.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- GAME OVER MODAL -->
+  <div id="gameOverModal" class="modal hidden">
+    <div class="modal-content">
+      <h2 id="gameOverTitle">Game Over</h2>
+      <p id="gameOverText"></p>
+      <p id="gameOverStats" class="stats-line"></p>
+      <button id="playAgainBtn" class="btn primary">Play Again</button>
+      <button id="viewLeaderboardBtn" class="btn ghost">View Leaderboard</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
