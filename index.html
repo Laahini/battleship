@@ -18,6 +18,7 @@
       <div class="logo">🎯 BATTLESHIP</div>
       <nav class="nav-links">
         <button class="nav-link active" data-nav="play">Play</button>
+        <button class="nav-link" data-nav="multiplayer">Multiplayer</button>
         <button class="nav-link" data-nav="leaderboard">Leaderboard</button>
       </nav>
       <div class="player-name-wrap">
@@ -27,9 +28,12 @@
     </div>
   </header>
 
-  <div class="status-line" id="statusLine">Place your ships to begin</div>
+  <div class="status-row">
+    <div class="status-line" id="statusLine">Place your ships to begin</div>
+    <div class="timer-badge hidden" id="timerBadge">⏱ 0:00</div>
+  </div>
 
-  <!-- ============== PLAY VIEW ============== -->
+  <!-- ============== PLAY VIEW (single player vs AI) ============== -->
   <main id="playView" class="view">
 
     <!-- PLACEMENT SCREEN -->
@@ -41,6 +45,16 @@
         </div>
 
         <div class="controls-panel">
+          <h3>Game Setup</h3>
+          <div class="setup-row">
+            <label for="boardSizeSelect">Board size</label>
+            <select id="boardSizeSelect"></select>
+          </div>
+          <div class="setup-row">
+            <label for="fleetSelect">Fleet</label>
+            <select id="fleetSelect"></select>
+          </div>
+
           <h3>Ships to Place</h3>
           <ul id="shipList" class="ship-list"></ul>
 
@@ -75,6 +89,94 @@
       <div class="log-panel">
         <h3>Battle Log</h3>
         <div id="logList" class="log-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============== MULTIPLAYER VIEW ============== -->
+  <main id="multiplayerView" class="view hidden">
+
+    <!-- Menu: create or join -->
+    <section id="mpMenu" class="screen">
+      <div class="placement-panel">
+        <div class="controls-panel">
+          <h3>Create a Game</h3>
+          <div class="setup-row">
+            <label for="mpBoardSizeSelect">Board size</label>
+            <select id="mpBoardSizeSelect"></select>
+          </div>
+          <div class="setup-row">
+            <label for="mpFleetSelect">Fleet</label>
+            <select id="mpFleetSelect"></select>
+          </div>
+          <button id="mpCreateBtn" class="btn primary">Create Game</button>
+          <p class="hint">You'll get a 6-character code to send your opponent.</p>
+        </div>
+
+        <div class="controls-panel">
+          <h3>Join a Game</h3>
+          <div class="setup-row">
+            <label for="mpCodeInput">Game code</label>
+            <input id="mpCodeInput" class="code-input" maxlength="6" placeholder="ABC123" autocomplete="off">
+          </div>
+          <button id="mpJoinBtn" class="btn accent-blue">Join Game</button>
+          <p id="mpJoinError" class="hint error hidden"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Waiting for opponent -->
+    <section id="mpWaiting" class="screen hidden">
+      <div class="board-wrap centered-card">
+        <h2>Waiting for opponent</h2>
+        <div class="code-display" id="mpCodeDisplay">------</div>
+        <button id="mpCopyCodeBtn" class="btn ghost">Copy Code</button>
+        <p class="hint">Send this code to your opponent so they can join.</p>
+        <div class="spinner"></div>
+      </div>
+    </section>
+
+    <!-- Multiplayer placement -->
+    <section id="mpPlacementScreen" class="screen hidden">
+      <div class="placement-panel">
+        <div class="board-wrap">
+          <h2>Your Fleet</h2>
+          <div id="mpPlacementBoard" class="board" data-size="10"></div>
+        </div>
+
+        <div class="controls-panel">
+          <h3>Ships to Place</h3>
+          <ul id="mpShipList" class="ship-list"></ul>
+
+          <div class="button-row">
+            <button id="mpRotateBtn" class="btn">⟳ Rotate (R)</button>
+            <button id="mpRandomBtn" class="btn accent-blue">🎲 Randomize</button>
+            <button id="mpResetBtn" class="btn ghost">↺ Reset</button>
+          </div>
+
+          <button id="mpReadyBtn" class="btn primary" disabled>Ready</button>
+          <p id="mpPlacementStatus" class="hint">Click a cell to place the highlighted ship. Press R or right-click to rotate.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Multiplayer battle -->
+    <section id="mpBattleScreen" class="screen hidden">
+      <div class="battle-panel">
+        <div class="board-wrap">
+          <h2 id="mpMyBoardLabel">Your Fleet</h2>
+          <div id="mpMyBoard" class="board" data-size="10"></div>
+        </div>
+
+        <div class="board-wrap">
+          <h2 id="mpEnemyBoardLabel">Enemy Waters</h2>
+          <div id="mpEnemyBoard" class="board" data-size="10"></div>
+        </div>
+      </div>
+
+      <div class="log-panel">
+        <h3>Battle Log</h3>
+        <div id="mpLogList" class="log-list"></div>
       </div>
     </section>
   </main>
@@ -129,11 +231,13 @@
       <p id="gameOverText"></p>
       <p id="gameOverStats" class="stats-line"></p>
       <button id="playAgainBtn" class="btn primary">Play Again</button>
+      <button id="shareResultBtn" class="btn accent-blue">Share Result</button>
       <button id="viewLeaderboardBtn" class="btn ghost">View Leaderboard</button>
     </div>
   </div>
 </div>
 
+<script src="config.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

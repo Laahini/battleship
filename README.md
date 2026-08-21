@@ -1,44 +1,71 @@
 # Battleship
 
-A browser-based Battleship game played against an AI opponent (hunt/target
-strategy with checkerboard-parity search), with a global leaderboard backed
-by AWS DynamoDB and served through Vercel serverless functions.
+A browser-based Battleship game — play against an AI opponent (hunt/target
+strategy with checkerboard-parity search), or challenge a friend in real
+multiplayer with a shareable game code. Configurable board size (8/10/12)
+and fleet size (3/5/7 ships). Global leaderboard and multiplayer state are
+both backed by a single AWS DynamoDB table, served through Vercel
+serverless functions.
 
 ## Architecture
 
 ```
-Browser (index.html / game.js)
-        │  fetch()
+Browser (index.html / game.js / config.js)
+        │  fetch() — polling, ~1.5s interval, no WebSockets
         ▼
-Vercel Serverless Function  (api/leaderboard.js, Node.js runtime)
-        │  AWS SDK v3
+Vercel Serverless Functions (Node.js runtime, AWS SDK v3)
+        ├─ api/leaderboard.js   GET/POST leaderboard entries
+        └─ api/multiplayer.js   create/join/submitFleet/fire + GET state
+        │
         ▼
-Amazon DynamoDB table "battleship-leaderboard"
-        ├─ Base table:        PK id (uuid)
-        ├─ GSI ResultShotsIndex:  PK result ("win"/"loss")  SK shots (N)
-        │     → Query(result="win"), ScanIndexForward=true  = "Best Wins" board
-        └─ GSI AllDateIndex:      PK gsiPk ("ALL")           SK date (N)
-              → Query(gsiPk="ALL"), ScanIndexForward=false   = "Recent Games" feed
+Amazon DynamoDB table "battleship-leaderboard"  (single-table design)
+        │
+        ├─ Leaderboard items:  id = <uuid>
+        │     ├─ GSI ResultShotsIndex:  PK result ("win"/"loss")  SK shots (N)
+        │     │     → Query(result="win"), ScanIndexForward=true  = "Best Wins"
+        │     └─ GSI AllDateIndex:      PK gsiPk ("ALL")           SK date (N)
+        │           → Query(gsiPk="ALL"), ScanIndexForward=false  = "Recent Games"
+        │
+        └─ Multiplayer game items:  id = "GAME#<6-char code>"
+              ├─ host / guest: { name, ships, shotsFired, ready }
+              ├─ status: waiting → placing → battle → finished
+              └─ version: optimistic-concurrency counter (conditional writes)
 ```
 
-This is a single-table DynamoDB design: one item per completed game, with
-two Global Secondary Indexes to serve two different access patterns without
-scanning the table. Billing mode is `PAY_PER_REQUEST` (on-demand) since
-traffic is low and unpredictable — no idle capacity to pay for.
+One table, two item shapes, distinguished by `id` prefix and served by
+different access patterns — standard single-table DynamoDB design rather
+than a table per entity type.
+
+**Multiplayer is server-authoritative.** Each player only ever submits
+their own fleet; the server stores it, and `api/multiplayer.js` resolves
+every shot against the *stored* opponent fleet, not anything the client
+claims. `validateFleet()` independently checks ship count, sizes,
+in-bounds, no overlaps, and that every ship is a straight contiguous line
+before accepting a submitted fleet — a client can't place ships out of
+bounds, overlapping, bent, or lie about a hit. Turn order and duplicate
+shots are also enforced server-side. There's no WebSocket layer (Vercel
+functions are request/response, not long-lived connections), so the client
+polls `GET /api/multiplayer` every ~1.5s while a game is in progress.
 
 ## Stack
 
 - **Frontend**: vanilla HTML/CSS/JS, no build step
-- **Backend**: Vercel serverless function (`api/leaderboard.js`), Node.js, AWS SDK v3
-- **Database**: AWS DynamoDB (on-demand)
+- **Backend**: Vercel serverless functions, Node.js, AWS SDK v3
+- **Database**: AWS DynamoDB (on-demand / `PAY_PER_REQUEST`)
 - **Hosting/CI**: Vercel, auto-deploys on push to `main`
 
 ## API
 
-`GET /api/leaderboard?type=best` — top 10 wins, sorted by fewest shots.
-`GET /api/leaderboard?type=recent` — last 15 games, newest first.
-`POST /api/leaderboard` — body `{ name, result, shots, hits, accuracy, duration }`,
-server assigns `id` and `date` and clamps/validates all numeric fields.
+**Leaderboard**
+- `GET /api/leaderboard?type=best` — top 10 wins, sorted by fewest shots
+- `GET /api/leaderboard?type=recent` — last 15 games, newest first
+- `POST /api/leaderboard` — `{ name, result, shots, hits, accuracy, duration }`
+
+**Multiplayer** (`POST /api/multiplayer`, `action` in body; state via `GET /api/multiplayer?code&role`)
+- `action: "create"` — `{ name, boardSize, fleet }` → `{ code, role: "host", ... }`
+- `action: "join"` — `{ code, name }` → `{ role: "guest", ... }`
+- `action: "submitFleet"` — `{ code, role, ships }`, server-validated
+- `action: "fire"` — `{ code, role, r, c }`, turn-checked and resolved server-side
 
 ## Setup
 
@@ -60,9 +87,15 @@ In the AWS Console → IAM → Users → **Create user**:
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "LeaderboardTableAccess",
+      "Sid": "LeaderboardAndGameTableAccess",
       "Effect": "Allow",
-      "Action": ["dynamodb:PutItem", "dynamodb:Query", "dynamodb:DescribeTable"],
+      "Action": [
+        "dynamodb:PutItem",
+        "dynamodb:GetItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:Query",
+        "dynamodb:DescribeTable"
+      ],
       "Resource": [
         "arn:aws:dynamodb:REGION:ACCOUNT_ID:table/battleship-leaderboard",
         "arn:aws:dynamodb:REGION:ACCOUNT_ID:table/battleship-leaderboard/index/*"
@@ -78,6 +111,9 @@ In the AWS Console → IAM → Users → **Create user**:
 }
 ```
 
+(`GetItem`/`UpdateItem` are needed for multiplayer game state — the
+leaderboard alone only ever needs `PutItem`/`Query`.)
+
 - Create an **access key** for the user (use case: "Application running outside AWS").
 - Save the Access Key ID and Secret Access Key — the secret is shown only once.
 
@@ -92,6 +128,11 @@ npm run create-table
 
 This runs `scripts/create-table.mjs`, which provisions the table and both
 GSIs shown above. Safe to re-run — it no-ops if the table already exists.
+
+Optional: enable TTL on the `expiresAt` attribute (Console → table →
+Additional settings → Time to Live) so abandoned/unfinished multiplayer
+games are automatically cleaned up after 6 hours. Not required for
+functionality — games just persist as ordinary items without it.
 
 ### 4. Configure Vercel environment variables
 
@@ -117,5 +158,16 @@ Trigger a redeploy after adding them (Vercel → Deployments → ⋯ → Redeplo
 npx vercel dev
 ```
 
-Runs the static frontend and the `/api/leaderboard` function together
-against real DynamoDB (using your local AWS env vars).
+Runs the static frontend and both API functions together against real
+DynamoDB (using your local AWS env vars).
+
+## Features
+
+- AI opponent: hunt/target algorithm with checkerboard-parity search and
+  direction-tracking once a ship is found
+- Configurable board size (8×8 / 10×10 / 12×12) and fleet (Compact/Classic/Armada)
+- Live battle timer
+- Share Result (Web Share API, falls back to clipboard copy)
+- Global leaderboard (best wins by fewest shots, recent games feed)
+- Real-time-ish multiplayer via 6-character join codes, server-authoritative
+  hit resolution, polling-based sync
