@@ -162,6 +162,18 @@
 
     <!-- Multiplayer battle -->
     <section id="mpBattleScreen" class="screen hidden">
+      <div class="turn-lights" id="mpTurnLights">
+        <div class="turn-light-unit" id="mpTurnLightMe">
+          <span class="light-bulb"></span>
+          <span class="light-label">You</span>
+        </div>
+        <div class="turn-vs">VS</div>
+        <div class="turn-light-unit" id="mpTurnLightOpponent">
+          <span class="light-bulb"></span>
+          <span class="light-label" id="mpTurnLightOpponentName">Opponent</span>
+        </div>
+      </div>
+
       <div class="battle-panel">
         <div class="board-wrap">
           <h2 id="mpMyBoardLabel">Your Fleet</h2>

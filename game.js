@@ -196,6 +196,9 @@ const mpEnemyBoardEl = document.getElementById('mpEnemyBoard');
 const mpMyBoardLabel = document.getElementById('mpMyBoardLabel');
 const mpEnemyBoardLabel = document.getElementById('mpEnemyBoardLabel');
 const mpLogListEl = document.getElementById('mpLogList');
+const mpTurnLightMe = document.getElementById('mpTurnLightMe');
+const mpTurnLightOpponent = document.getElementById('mpTurnLightOpponent');
+const mpTurnLightOpponentName = document.getElementById('mpTurnLightOpponentName');
 
 /* ---------------------------------------------------------
    Player name
@@ -824,6 +827,7 @@ const mp = {
   currentScreen: 'menu',
   lastState: null,
   battleStarted: false,
+  lastTurn: null,
 };
 
 function currentMpFleet() {
@@ -844,6 +848,7 @@ function mpReturnToMenu() {
   mp.role = null;
   mp.lastState = null;
   mp.battleStarted = false;
+  mp.lastTurn = null;
   hideTimer();
   switchView('multiplayer');
   mpShowScreen('menu');
@@ -1212,6 +1217,7 @@ function mpRenderBattle(state) {
   const oppName = mpOpponentName(state);
   mpMyBoardLabel.textContent = 'Your Fleet';
   mpEnemyBoardLabel.textContent = `${oppName}'s Waters`;
+  mpUpdateTurnLights(state, oppName);
 
   mpLogListEl.innerHTML = '';
   (state.log || []).forEach(entry => {
@@ -1226,6 +1232,36 @@ function mpRenderBattle(state) {
 function mpOpponentName(state) {
   const opp = state.role === 'host' ? state.guest : state.host;
   return (opp && opp.name) || 'Opponent';
+}
+
+function mpUpdateTurnLights(state, oppName) {
+  mpTurnLightOpponentName.textContent = oppName;
+
+  const turnChanged = mp.lastTurn !== null && mp.lastTurn !== state.turn;
+  mp.lastTurn = state.turn;
+
+  const myUnit = mpTurnLightMe;
+  const oppUnit = mpTurnLightOpponent;
+  myUnit.classList.remove('active', 'finished-win', 'flash');
+  oppUnit.classList.remove('active', 'finished-win', 'flash');
+
+  if (state.status === 'finished') {
+    const iWon = state.winner === mp.role;
+    (iWon ? myUnit : oppUnit).classList.add('finished-win');
+    return;
+  }
+
+  const myTurn = state.turn === mp.role;
+  (myTurn ? myUnit : oppUnit).classList.add('active');
+
+  if (turnChanged) {
+    // briefly pulse whichever light just turned on, so a move that just
+    // happened is obvious even though the client only learns about it on
+    // the next poll tick.
+    const changedUnit = myTurn ? myUnit : oppUnit;
+    changedUnit.classList.add('flash');
+    setTimeout(() => changedUnit.classList.remove('flash'), 600);
+  }
 }
 
 function mpEndGame(iWon, state) {

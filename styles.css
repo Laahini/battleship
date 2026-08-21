@@ -442,14 +442,82 @@ h1, h2, h3, .logo {
   to { transform: rotate(360deg); }
 }
 
-.turn-indicator {
-  text-align: center;
-  font-weight: 700;
-  margin: 4px 0 16px;
+/* ---------- Turn lights (multiplayer) ---------- */
+.turn-lights {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 4px 0 22px;
+  flex-wrap: wrap;
 }
 
-.turn-indicator.mine { color: var(--green); }
-.turn-indicator.theirs { color: var(--red); }
+.turn-vs {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.turn-light-unit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 3px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 18px 8px 14px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.light-bulb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #d8d4c6;
+  border: 2px solid var(--border);
+  box-shadow: inset 0 0 0 2px var(--card);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.light-label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--muted);
+  transition: color 0.2s ease;
+}
+
+.turn-light-unit.active {
+  transform: translateY(-1px);
+  box-shadow: 4px 4px 0 var(--border);
+}
+
+.turn-light-unit.active .light-bulb {
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(47, 158, 88, 0.25), 0 0 10px 2px rgba(47, 158, 88, 0.7);
+}
+
+.turn-light-unit.active .light-label {
+  color: var(--ink);
+}
+
+.turn-light-unit.finished-win .light-bulb {
+  background: var(--yellow);
+  box-shadow: 0 0 0 3px rgba(232, 185, 63, 0.3), 0 0 10px 2px rgba(232, 185, 63, 0.8);
+}
+
+.turn-light-unit.finished-win .light-label {
+  color: var(--ink);
+}
+
+.turn-light-unit.flash {
+  animation: turnFlash 0.6s ease;
+}
+
+@keyframes turnFlash {
+  0%, 100% { transform: translateY(-1px) scale(1); }
+  35% { transform: translateY(-1px) scale(1.08); }
+}
 
 /* ---------- Buttons ---------- */
 .btn {
