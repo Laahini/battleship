@@ -130,7 +130,10 @@ async function handleCreate(req, res) {
       turn: 'host',
       winner: null,
       host: { name, ships: null, shotsFired: [], ready: false },
-      guest: null,
+      // `guest` is intentionally omitted (not even `null`) so that
+      // attribute_not_exists(guest) in handleJoin's ConditionExpression
+      // correctly reads "nobody has joined yet" — a DynamoDB NULL-type
+      // value still counts as the attribute being *present*.
       log: [`${name} created the game.`],
       version: 1,
       createdAt: now,
