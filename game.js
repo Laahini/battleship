@@ -161,6 +161,7 @@ const gameOverStats = document.getElementById('gameOverStats');
 const playAgainBtn = document.getElementById('playAgainBtn');
 const shareResultBtn = document.getElementById('shareResultBtn');
 const viewLeaderboardBtn = document.getElementById('viewLeaderboardBtn');
+const closeGameOverBtn = document.getElementById('closeGameOverBtn');
 
 const navLinks = document.querySelectorAll('.nav-link');
 const playView = document.getElementById('playView');
@@ -359,6 +360,10 @@ async function renderLeaderboard() {
 viewLeaderboardBtn.addEventListener('click', () => {
   gameOverModal.classList.add('hidden');
   switchView('leaderboard');
+});
+
+closeGameOverBtn.addEventListener('click', () => {
+  gameOverModal.classList.add('hidden');
 });
 
 /* ---------------------------------------------------------
